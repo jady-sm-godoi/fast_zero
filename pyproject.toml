@@ -1,0 +1,42 @@
+[project]
+name = "fast-zero"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.139.0"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.21",
+    "taskipy>=1.14.1",
+    "typos>=1.48.0",
+]
+
+[tool.ruff]
+line-length = 79
+extend-exclude = ['migrations']
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+
+[tool.pytest.ini_options]
+pythonpath = ['.']
+addopts = ['-p', 'no:warnings', '--cov=.', '--cov-context=test']
+
+[tool.typos.files]
+extend-exclude = ["*.md"]
+
+[tool.taskipy.tasks]
+lint = 'ruff check'
+pre_format = 'ruff check --fix'
+format = 'ruff format'
+run = 'fastapi dev app.py'
+pre_test = 'task lint'
+test = 'pytest -s -x -vv'
+post_test = 'coverage html --show-contexts'
