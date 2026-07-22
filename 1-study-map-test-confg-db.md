@@ -246,3 +246,85 @@ conftest.py: session() (volta do yield)
 | **Event hook** | Um "aviso" que o SQLAlchemy dá: "ei, estou prestes a inserir algo! Alguém quer mexer antes?" |
 | **SQLite :memory:** | Banco de dados que mora na RAM — quando o programa termina, ele simplesmente desaparece |
 | **Dependency Injection** | O pytest pergunta pro teste "você precisa de quê?" e entrega na mão — você não precisa criar nada |
+
+---
+
+# Configuração do Banco + Alembic
+
+## 1. Criar `fast_zero/settings.py`
+
+```python
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file='.env', env_file_encoding='utf-8'
+    )
+
+    DATABASE_URL: str = Field(init=False)
+```
+
+## 2. Criar `.env` na raiz do projeto
+
+```
+DATABASE_URL="sqlite:///database.db"
+```
+
+## 3. Adicionar `database.db` ao `.gitignore`
+
+```bash
+echo 'database.db' >> .gitignore
+```
+
+## 4. Instalar Alembic
+
+```bash
+poetry add alembic
+```
+
+## 5. Iniciar Alembic
+
+```bash
+alembic init migrations
+```
+
+Cria o diretório `migrations/` e o arquivo `alembic.ini`.
+
+## 6. Configurar `migrations/env.py`
+
+Adicionar os imports e configurar a URL do banco e os metadados:
+
+```python
+from fast_zero.models import table_registry
+from fast_zero.settings import Settings
+
+config = context.config
+config.set_main_option('sqlalchemy.url', Settings().DATABASE_URL)
+target_metadata = table_registry.metadata
+```
+
+## 7. Criar migração automática
+
+```bash
+alembic revision --autogenerate -m "create users table"
+```
+
+Gera um arquivo em `migrations/versions/` com `upgrade()` e `downgrade()`.
+
+## 8. Aplicar a migração
+
+```bash
+alembic upgrade head
+```
+
+## 9. Verificar o banco (opcional)
+
+```bash
+sqlite3 database.db
+.tables
+.schema
+select version_num from alembic_version;
+.quit
+```
